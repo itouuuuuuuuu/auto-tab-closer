@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title data-i18n="optionsTitle">Auto Tab Closer settings</title>
+    <link rel="stylesheet" href="../shared/base.css" />
+    <link rel="stylesheet" href="./options.css" />
+  </head>
+  <body>
+    <main>
+      <h1 data-i18n="optionsTitle">Auto Tab Closer settings</h1>
+
+      <form id="form">
+        <div class="field">
+          <label for="threshold" data-i18n="optionsThresholdLabel">Close tabs not viewed for (hours)</label>
+          <input type="number" id="threshold" min="1" max="720" step="1" required />
+          <p class="muted" data-i18n="optionsThresholdHelp"></p>
+        </div>
+
+        <div class="field">
+          <label for="whitelist" data-i18n="optionsWhitelistLabel">Never close these sites</label>
+          <textarea
+            id="whitelist"
+            rows="8"
+            spellcheck="false"
+            data-i18n-placeholder="optionsWhitelistPlaceholder"
+          ></textarea>
+          <p class="muted" data-i18n="optionsWhitelistHelp"></p>
+        </div>
+
+        <div class="field">
+          <label class="check">
+            <input type="checkbox" id="excludeGrouped" />
+            <span data-i18n="optionsExcludeGrouped">Never close tabs that belong to a tab group</span>
+          </label>
+        </div>
+
+        <p class="muted" data-i18n="optionsAlwaysExcluded"></p>
+
+        <div class="actions">
+          <button type="submit" class="primary" data-i18n="optionsSave"></button>
+          <span id="saved" class="muted" data-i18n="optionsSaved" hidden></span>
+        </div>
+      </form>
+    </main>
+    <script type="module" src="./options.ts"></script>
+  </body>
+</html>

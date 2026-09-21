@@ -1,0 +1,41 @@
+{
+  "extName": { "message": "Auto Tab Closer" },
+  "extDescription": {
+    "message": "一定時間（設定可能）見ていないタブを自動で閉じます。ピン留めしたタブは閉じません。"
+  },
+  "popupEnabled": { "message": "自動クローズ 有効" },
+  "popupPaused": { "message": "一時停止中" },
+  "popupThreshold": {
+    "message": "$HOURS$時間以上見ていないタブを閉じます",
+    "placeholders": { "HOURS": { "content": "$1" } }
+  },
+  "popupNextCheck": {
+    "message": "次回チェックまで $MIN$ 分",
+    "placeholders": { "MIN": { "content": "$1" } }
+  },
+  "popupNextCheckPaused": { "message": "チェックは停止中です" },
+  "popupCheckNow": { "message": "今すぐチェック" },
+  "popupChecked": {
+    "message": "$N$ 件のタブを閉じました",
+    "placeholders": { "N": { "content": "$1" } }
+  },
+  "popupRecentlyClosed": { "message": "最近自動で閉じたタブ" },
+  "popupRecentlyClosedEmpty": { "message": "まだ自動で閉じたタブはありません。" },
+  "popupClearAll": { "message": "全消去" },
+  "popupRestore": { "message": "復元" },
+  "popupOpenOptions": { "message": "設定" },
+  "optionsTitle": { "message": "Auto Tab Closer 設定" },
+  "optionsThresholdLabel": { "message": "この時間（h）見ていないタブを閉じる" },
+  "optionsThresholdHelp": { "message": "1〜720（30日）の整数。デフォルトは 12。" },
+  "optionsWhitelistLabel": { "message": "閉じないサイト" },
+  "optionsWhitelistHelp": {
+    "message": "1 行に 1 ホスト名。「example.com」は「app.example.com」などのサブドメインにも一致します。# で始まる行は無視されます。"
+  },
+  "optionsWhitelistPlaceholder": { "message": "example.com\n*.slack.com" },
+  "optionsExcludeGrouped": { "message": "タブグループに属するタブは閉じない" },
+  "optionsAlwaysExcluded": {
+    "message": "ピン留めタブ、各ウィンドウのアクティブタブ、音声再生中のタブ、ウィンドウ内の最後の 1 タブは常に閉じません。"
+  },
+  "optionsSave": { "message": "保存" },
+  "optionsSaved": { "message": "保存しました" }
+}
