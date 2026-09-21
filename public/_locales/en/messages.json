@@ -1,0 +1,38 @@
+{
+  "extName": { "message": "Auto Tab Closer" },
+  "extDescription": {
+    "message": "Automatically closes tabs you haven't looked at for a configurable number of hours. Pinned tabs are never touched."
+  },
+  "popupEnabled": { "message": "Auto-close enabled" },
+  "popupPaused": { "message": "Paused" },
+  "popupThreshold": {
+    "message": "Closing tabs idle for $HOURS$+ hours",
+    "placeholders": { "HOURS": { "content": "$1" } }
+  },
+  "popupNextCheck": {
+    "message": "Next check in $MIN$ min",
+    "placeholders": { "MIN": { "content": "$1" } }
+  },
+  "popupNextCheckPaused": { "message": "Checks are paused" },
+  "popupCheckNow": { "message": "Check now" },
+  "popupChecked": { "message": "Closed $N$ tab(s)", "placeholders": { "N": { "content": "$1" } } },
+  "popupRecentlyClosed": { "message": "Recently auto-closed" },
+  "popupRecentlyClosedEmpty": { "message": "Nothing has been auto-closed yet." },
+  "popupClearAll": { "message": "Clear all" },
+  "popupRestore": { "message": "Restore" },
+  "popupOpenOptions": { "message": "Settings" },
+  "optionsTitle": { "message": "Auto Tab Closer settings" },
+  "optionsThresholdLabel": { "message": "Close tabs not viewed for (hours)" },
+  "optionsThresholdHelp": { "message": "Whole hours between 1 and 720 (30 days). Default is 12." },
+  "optionsWhitelistLabel": { "message": "Never close these sites" },
+  "optionsWhitelistHelp": {
+    "message": "One hostname per line. \"example.com\" also matches every subdomain such as \"app.example.com\". Lines starting with # are ignored."
+  },
+  "optionsWhitelistPlaceholder": { "message": "example.com\n*.slack.com" },
+  "optionsExcludeGrouped": { "message": "Never close tabs that belong to a tab group" },
+  "optionsAlwaysExcluded": {
+    "message": "Pinned tabs, the active tab of each window, tabs playing audio, and the last tab in a window are always kept."
+  },
+  "optionsSave": { "message": "Save" },
+  "optionsSaved": { "message": "Saved" }
+}

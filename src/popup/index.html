@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Auto Tab Closer</title>
+    <link rel="stylesheet" href="../shared/base.css" />
+    <link rel="stylesheet" href="./popup.css" />
+  </head>
+  <body>
+    <header class="row">
+      <label class="switch" for="enabled" data-i18n-title="popupEnabled">
+        <input type="checkbox" id="enabled" />
+        <span class="track"></span>
+        <span class="sr-only" data-i18n="popupEnabled">Auto-close enabled</span>
+      </label>
+      <span id="enabledLabel" class="grow"></span>
+      <button type="button" id="openOptions" class="link" data-i18n="popupOpenOptions"></button>
+    </header>
+
+    <section class="status">
+      <div id="threshold"></div>
+      <div class="row">
+        <span id="nextCheck" class="muted grow"></span>
+        <button type="button" id="checkNow" data-i18n="popupCheckNow"></button>
+      </div>
+      <div id="checkResult" class="muted" hidden></div>
+    </section>
+
+    <section class="closed">
+      <div class="row">
+        <h2 class="grow" data-i18n="popupRecentlyClosed">Recently auto-closed</h2>
+        <button type="button" id="clearAll" class="link danger" data-i18n="popupClearAll" hidden></button>
+      </div>
+      <p id="closedEmpty" class="muted" data-i18n="popupRecentlyClosedEmpty"></p>
+      <ul id="closedList"></ul>
+    </section>
+
+    <script type="module" src="./popup.ts"></script>
+  </body>
+</html>
