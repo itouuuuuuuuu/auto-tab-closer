@@ -39,7 +39,13 @@ describe("closed tabs list", () => {
     const list = appendClosedTabs([e(1), e(2)], [e(3), e(4)], 3);
     expect(list.map((x) => x.closedAt)).toEqual([3, 4, 1]);
   });
-  it("removes by index", () => {
-    expect(removeClosedTab([e(1), e(2), e(3)], 1).map((x) => x.closedAt)).toEqual([1, 3]);
+  it("removes by identity (url + closedAt)", () => {
+    expect(removeClosedTab([e(1), e(2), e(3)], e(2)).map((x) => x.closedAt)).toEqual([1, 3]);
+  });
+  it("is a no-op when the entry is gone", () => {
+    expect(removeClosedTab([e(1), e(3)], e(2)).map((x) => x.closedAt)).toEqual([1, 3]);
+  });
+  it("removes only the first of identical entries", () => {
+    expect(removeClosedTab([e(1), e(1)], e(1))).toHaveLength(1);
   });
 });

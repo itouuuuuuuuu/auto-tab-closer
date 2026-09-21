@@ -15,7 +15,15 @@ export function normalizePattern(raw: string): string | null {
   p = p.replace(/:\d+$/, "");
   if (p.startsWith("*.")) p = p.slice(2);
   p = p.replace(/^\.+|\.+$/g, "");
-  return p === "" ? null : p;
+  if (p === "") return null;
+  // Run it through the URL parser so the stored form matches what
+  // `new URL(tabUrl).hostname` yields at match time (IDN -> punycode, etc.).
+  try {
+    const host = new URL(`http://${p}/`).hostname;
+    return host === "" ? null : host;
+  } catch {
+    return null;
+  }
 }
 
 export function parseWhitelist(text: string): string[] {

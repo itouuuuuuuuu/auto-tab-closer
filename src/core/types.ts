@@ -4,7 +4,6 @@ export interface TabSnapshot {
   windowId: number;
   url: string;
   title: string;
-  favIconUrl?: string;
   pinned: boolean;
   active: boolean;
   audible: boolean;
@@ -26,7 +25,6 @@ export interface Settings {
 export interface ClosedTab {
   url: string;
   title: string;
-  favIconUrl?: string;
   closedAt: number;
 }
 

@@ -9,6 +9,13 @@ export function appendClosedTabs(
   return [...added, ...existing].slice(0, max);
 }
 
-export function removeClosedTab(list: readonly ClosedTab[], index: number): ClosedTab[] {
-  return list.filter((_, i) => i !== index);
+/** Two entries are the same tab when both url and closedAt match. */
+export function sameClosedTab(a: ClosedTab, b: ClosedTab): boolean {
+  return a.url === b.url && a.closedAt === b.closedAt;
+}
+
+/** Remove the first entry identical to `target`; returns the list unchanged when absent. */
+export function removeClosedTab(list: readonly ClosedTab[], target: ClosedTab): ClosedTab[] {
+  const index = list.findIndex((e) => sameClosedTab(e, target));
+  return index === -1 ? [...list] : list.filter((_, i) => i !== index);
 }

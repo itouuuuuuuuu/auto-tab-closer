@@ -1,12 +1,16 @@
-import { removeClosedTab } from "../core/closed-tabs";
 import type { ClosedTab } from "../core/types";
 import { localizeDocument, t } from "../shared/i18n";
-import { type CheckNowResponse, type NextCheckResponse, sendMessage } from "../shared/messages";
 import {
+  type CheckNowResponse,
+  type ClosedTabsResponse,
+  type NextCheckResponse,
+  sendMessage,
+} from "../shared/messages";
+import {
+  LOCAL_KEYS,
   loadClosedTabs,
   loadEnabled,
   loadSettings,
-  saveClosedTabs,
   saveEnabled,
 } from "../shared/storage";
 
@@ -28,6 +32,18 @@ const closedListEl = $<HTMLUListElement>("closedList");
 const openOptionsBtn = $<HTMLButtonElement>("openOptions");
 
 let closedTabs: ClosedTab[] = [];
+let restoring = false;
+
+/**
+ * Favicon via Chrome's own cache (chrome-extension://<id>/_favicon/), which
+ * never hits the network. Requires the "favicon" permission.
+ */
+function faviconUrl(pageUrl: string): string {
+  const u = new URL(chrome.runtime.getURL("/_favicon/"));
+  u.searchParams.set("pageUrl", pageUrl);
+  u.searchParams.set("size", "16");
+  return u.toString();
+}
 
 async function init(): Promise<void> {
   localizeDocument();
@@ -68,13 +84,12 @@ function renderClosedTabs(): void {
   closedEmptyEl.hidden = hasItems;
   clearAllBtn.hidden = !hasItems;
 
-  closedTabs.forEach((tab, index) => {
+  for (const tab of closedTabs) {
     const li = document.createElement("li");
 
     const img = document.createElement("img");
-    img.src = tab.favIconUrl ?? "";
+    img.src = faviconUrl(tab.url);
     img.alt = "";
-    img.hidden = !tab.favIconUrl;
     img.addEventListener("error", () => {
       img.hidden = true;
     });
@@ -92,23 +107,41 @@ function renderClosedTabs(): void {
     text.append(title, url);
 
     const restore = document.createElement("button");
+    restore.type = "button";
     restore.className = "link";
     restore.textContent = t("popupRestore");
-    restore.addEventListener("click", () => void restoreTab(index));
+    restore.disabled = restoring;
+    restore.addEventListener("click", () => void restoreTab(tab));
 
     li.append(img, text, restore);
     closedListEl.append(li);
-  });
+  }
 }
 
-async function restoreTab(index: number): Promise<void> {
-  const tab = closedTabs[index];
-  if (!tab) return;
-  await chrome.tabs.create({ url: tab.url, active: false });
-  closedTabs = removeClosedTab(closedTabs, index);
-  await saveClosedTabs(closedTabs);
+async function restoreTab(tab: ClosedTab): Promise<void> {
+  // Ignore a second click before the first restore finishes.
+  if (restoring) return;
+  restoring = true;
   renderClosedTabs();
+  try {
+    // The background owns the list and serialises all writes to it.
+    const res = await sendMessage<ClosedTabsResponse | undefined>({
+      type: "restoreClosedTab",
+      tab,
+    });
+    closedTabs = res?.closedTabs ?? (await loadClosedTabs());
+  } finally {
+    restoring = false;
+    renderClosedTabs();
+  }
 }
+
+// Keep the list in sync when the background closes tabs while the popup is open.
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "local" && LOCAL_KEYS.closedTabs in changes && !restoring) {
+    void refreshClosedTabs();
+  }
+});
 
 enabledInput.addEventListener("change", async () => {
   const enabled = enabledInput.checked;
@@ -132,9 +165,14 @@ checkNowBtn.addEventListener("click", async () => {
 });
 
 clearAllBtn.addEventListener("click", async () => {
-  closedTabs = [];
-  await saveClosedTabs(closedTabs);
-  renderClosedTabs();
+  clearAllBtn.disabled = true;
+  try {
+    const res = await sendMessage<ClosedTabsResponse | undefined>({ type: "clearClosedTabs" });
+    closedTabs = res?.closedTabs ?? (await loadClosedTabs());
+    renderClosedTabs();
+  } finally {
+    clearAllBtn.disabled = false;
+  }
 });
 
 openOptionsBtn.addEventListener("click", () => {

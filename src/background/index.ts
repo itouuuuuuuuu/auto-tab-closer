@@ -1,7 +1,12 @@
-import { appendClosedTabs } from "../core/closed-tabs";
+import { appendClosedTabs, removeClosedTab } from "../core/closed-tabs";
 import { selectTabsToClose } from "../core/select-tabs";
 import { CHECK_INTERVAL_MINUTES, type ClosedTab, type TabSnapshot } from "../core/types";
-import type { CheckNowResponse, Message, NextCheckResponse } from "../shared/messages";
+import type {
+  CheckNowResponse,
+  ClosedTabsResponse,
+  Message,
+  NextCheckResponse,
+} from "../shared/messages";
 import {
   LOCAL_KEYS,
   loadAccessTimes,
@@ -114,32 +119,26 @@ async function runCheck(): Promise<number> {
   const toClose = selectTabsToClose({ tabs, settings, now });
   if (toClose.length === 0) return 0;
 
-  const ids = toClose.map((t) => t.id);
-  // Close in one call; if any id is already gone Chrome rejects the whole call,
-  // so fall back to one-by-one on failure.
-  let closedTabs: TabSnapshot[] = [];
-  try {
-    await chrome.tabs.remove(ids);
-    closedTabs = toClose;
-  } catch {
-    for (const t of toClose) {
-      try {
-        await chrome.tabs.remove(t.id);
-        closedTabs.push(t);
-      } catch {
-        // Tab vanished between query and remove; ignore.
-      }
+  // Remove one tab at a time. chrome.tabs.remove(ids[]) is not atomic: it
+  // closes tabs in order and stops at the first failure, so a batch call could
+  // close tabs without telling us which ones succeeded.
+  const closedTabs: TabSnapshot[] = [];
+  for (const t of toClose) {
+    try {
+      await chrome.tabs.remove(t.id);
+      closedTabs.push(t);
+    } catch {
+      // Tab vanished between query and remove; ignore.
     }
   }
   if (closedTabs.length === 0) return 0;
 
-  const entries: ClosedTab[] = closedTabs.map((t) => {
-    const e: ClosedTab = { url: t.url, title: t.title || t.url, closedAt: now };
-    if (t.favIconUrl) e.favIconUrl = t.favIconUrl;
-    return e;
-  });
-  const existing = await loadClosedTabs();
-  await saveClosedTabs(appendClosedTabs(existing, entries));
+  const entries: ClosedTab[] = closedTabs.map((t) => ({
+    url: t.url,
+    title: t.title || t.url,
+    closedAt: now,
+  }));
+  await updateClosedTabs((list) => appendClosedTabs(list, entries));
 
   const badge = await loadBadgeCount();
   await saveBadgeCount(badge + closedTabs.length);
@@ -163,13 +162,33 @@ function toSnapshot(
     windowId: t.windowId,
     url: t.url ?? t.pendingUrl ?? "",
     title: t.title ?? "",
-    ...(t.favIconUrl ? { favIconUrl: t.favIconUrl } : {}),
     pinned: t.pinned,
     active: t.active,
     audible: t.audible ?? false,
     groupId: t.groupId ?? -1,
     lastAccessed,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Recently-closed list: every write goes through one queue
+// ---------------------------------------------------------------------------
+
+// The service worker is the only writer of `closedTabs`; the popup asks it via
+// messages. Chaining every read-modify-write onto this promise serialises
+// appends (runCheck), single removals (restore) and clears, so no writer can
+// overwrite another's result.
+let closedTabsQueue: Promise<unknown> = Promise.resolve();
+
+function updateClosedTabs(mutate: (list: ClosedTab[]) => ClosedTab[]): Promise<ClosedTab[]> {
+  const run = closedTabsQueue.then(async () => {
+    const next = mutate(await loadClosedTabs());
+    await saveClosedTabs(next);
+    return next;
+  });
+  // Keep the chain alive even if one step throws.
+  closedTabsQueue = run.catch(() => undefined);
+  return run;
 }
 
 // ---------------------------------------------------------------------------
@@ -214,6 +233,17 @@ async function handleMessage(message: Message): Promise<unknown> {
       await saveBadgeCount(0);
       await refreshBadge();
       return undefined;
+    }
+    case "restoreClosedTab": {
+      await chrome.tabs.create({ url: message.tab.url, active: false });
+      const closedTabs = await updateClosedTabs((list) => removeClosedTab(list, message.tab));
+      const res: ClosedTabsResponse = { closedTabs };
+      return res;
+    }
+    case "clearClosedTabs": {
+      const closedTabs = await updateClosedTabs(() => []);
+      const res: ClosedTabsResponse = { closedTabs };
+      return res;
     }
   }
 }

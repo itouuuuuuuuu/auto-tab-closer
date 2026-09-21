@@ -1,5 +1,5 @@
-// Generates simple PNG icons without any image dependency: a rounded blue
-// square with a white "x" (close) glyph. Run with `npm run icons`.
+// Generates transparent browser-tab + clock icons without image dependencies.
+// Geometry uses a 16-unit grid to keep the toolbar size legible. Run `npm run icons`.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { deflateSync } from "node:zlib";
 
@@ -31,46 +31,56 @@ function chunk(type, data) {
 
 function render(size) {
   const px = new Uint8Array(size * size * 4);
-  const r = size * 0.22; // corner radius
-  const stroke = Math.max(1.2, size * 0.11);
-  const pad = size * 0.3;
-
-  const inRounded = (x, y) => {
-    const cx = Math.min(Math.max(x, r), size - r);
-    const cy = Math.min(Math.max(y, r), size - r);
-    return (x - cx) ** 2 + (y - cy) ** 2 <= r * r;
+  const inRounded = (x, y, left, top, right, bottom, radius) => {
+    const cx = Math.min(Math.max(x, left + radius), right - radius);
+    const cy = Math.min(Math.max(y, top + radius), bottom - radius);
+    return (x - cx) ** 2 + (y - cy) ** 2 <= radius ** 2;
   };
-  // distance from point to segment
-  const distSeg = (px_, py_, x1, y1, x2, y2) => {
+  const distSeg = (x, y, x1, y1, x2, y2) => {
     const dx = x2 - x1;
     const dy = y2 - y1;
-    const t = Math.max(0, Math.min(1, ((px_ - x1) * dx + (py_ - y1) * dy) / (dx * dx + dy * dy)));
-    return Math.hypot(px_ - (x1 + t * dx), py_ - (y1 + t * dy));
+    const t = Math.max(0, Math.min(1, ((x - x1) * dx + (y - y1) * dy) / (dx * dx + dy * dy)));
+    return Math.hypot(x - (x1 + t * dx), y - (y1 + t * dy));
   };
 
-  const SS = 4; // supersampling
+  // A raised tab joins the window. The clock overlaps the lower-right corner;
+  // its blue rim preserves the silhouette against both light and dark chrome.
+  const colorAt = (x, y) => {
+    let color = null;
+    const window = inRounded(x, y, 1, 4, 14, 14, 1.5);
+    const tab = inRounded(x, y, 2, 1, 9, 7, 1.2);
+    if (window || tab) color = BG;
+    // A short tab label and browser toolbar rule distinguish this from a folder.
+    if (distSeg(x, y, 4, 3, 6.5, 3) <= 0.5) color = FG;
+    if (distSeg(x, y, 2.5, 6, 12.5, 6) <= 0.5) color = FG;
+    const clockDistance = Math.hypot(x - 10, y - 10);
+    if (clockDistance <= 5) color = BG;
+    if (clockDistance <= 3.8) color = FG;
+    // Two thick, round-ended hands remain distinct at 16px.
+    if (distSeg(x, y, 10, 7.5, 10, 10) <= 0.6 || distSeg(x, y, 10, 10, 12, 11) <= 0.6) color = BG;
+    return color;
+  };
+
+  const SS = 8;
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
-      let bgCov = 0;
-      let fgCov = 0;
+      let covered = 0;
+      const rgb = [0, 0, 0];
       for (let sy = 0; sy < SS; sy++) {
         for (let sx = 0; sx < SS; sx++) {
-          const fx = x + (sx + 0.5) / SS;
-          const fy = y + (sy + 0.5) / SS;
-          if (!inRounded(fx, fy)) continue;
-          bgCov++;
-          const d1 = distSeg(fx, fy, pad, pad, size - pad, size - pad);
-          const d2 = distSeg(fx, fy, size - pad, pad, pad, size - pad);
-          if (Math.min(d1, d2) <= stroke / 2) fgCov++;
+          const color = colorAt(
+            ((x + (sx + 0.5) / SS) * 16) / size,
+            ((y + (sy + 0.5) / SS) * 16) / size,
+          );
+          if (!color) continue;
+          covered++;
+          for (let c = 0; c < 3; c++) rgb[c] += color[c];
         }
       }
-      const a = bgCov / (SS * SS);
-      const f = bgCov ? fgCov / bgCov : 0;
       const i = (y * size + x) * 4;
-      px[i] = Math.round(BG[0] * (1 - f) + FG[0] * f);
-      px[i + 1] = Math.round(BG[1] * (1 - f) + FG[1] * f);
-      px[i + 2] = Math.round(BG[2] * (1 - f) + FG[2] * f);
-      px[i + 3] = Math.round(a * 255);
+      // Average only covered samples, keeping transparent edges free of halos.
+      for (let c = 0; c < 3; c++) px[i + c] = covered ? Math.round(rgb[c] / covered) : 0;
+      px[i + 3] = Math.round((covered / (SS * SS)) * 255);
     }
   }
   return px;
