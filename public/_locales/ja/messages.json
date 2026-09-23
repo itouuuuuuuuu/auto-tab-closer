@@ -27,6 +27,8 @@
   "optionsTitle": { "message": "Auto Tab Closer 設定" },
   "optionsThresholdLabel": { "message": "この時間（h）見ていないタブを閉じる" },
   "optionsThresholdHelp": { "message": "1〜720（30日）の整数。デフォルトは 12。" },
+  "optionsCheckIntervalLabel": { "message": "タブをチェックする間隔（分）" },
+  "optionsCheckIntervalHelp": { "message": "1〜60 の整数。デフォルトは 10。" },
   "optionsWhitelistLabel": { "message": "閉じないサイト" },
   "optionsWhitelistHelp": {
     "message": "1 行に 1 ホスト名。「example.com」は「app.example.com」などのサブドメインにも一致します。# で始まる行は無視されます。"

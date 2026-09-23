@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { appendClosedTabs, removeClosedTab } from "../src/core/closed-tabs";
-import { clampThresholdHours, sanitizeSettings } from "../src/core/settings";
+import {
+  clampCheckIntervalMinutes,
+  clampThresholdHours,
+  sanitizeSettings,
+} from "../src/core/settings";
 import { DEFAULT_SETTINGS } from "../src/core/types";
 
 describe("clampThresholdHours", () => {
@@ -18,6 +22,19 @@ describe("clampThresholdHours", () => {
   });
 });
 
+describe("clampCheckIntervalMinutes", () => {
+  it("clamps into [1, 60] and rounds", () => {
+    expect(clampCheckIntervalMinutes(0)).toBe(1);
+    expect(clampCheckIntervalMinutes(61)).toBe(60);
+    expect(clampCheckIntervalMinutes(7.6)).toBe(8);
+    expect(clampCheckIntervalMinutes("15")).toBe(15);
+  });
+  it("falls back to the default of 10 on garbage", () => {
+    expect(clampCheckIntervalMinutes(Number.NaN)).toBe(10);
+    expect(clampCheckIntervalMinutes(undefined)).toBe(10);
+  });
+});
+
 describe("sanitizeSettings", () => {
   it("returns defaults for undefined", () => {
     expect(sanitizeSettings(undefined)).toEqual(DEFAULT_SETTINGS);
@@ -28,8 +45,14 @@ describe("sanitizeSettings", () => {
         thresholdHours: "5",
         whitelist: ["a.com", 3, null],
         excludeGrouped: "yes",
+        checkIntervalMinutes: "30",
       }),
-    ).toEqual({ thresholdHours: 5, whitelist: ["a.com"], excludeGrouped: false });
+    ).toEqual({
+      thresholdHours: 5,
+      whitelist: ["a.com"],
+      excludeGrouped: false,
+      checkIntervalMinutes: 30,
+    });
   });
 });
 

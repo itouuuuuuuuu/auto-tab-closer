@@ -8,7 +8,6 @@ export const SYNC_KEYS = {
 export const LOCAL_KEYS = {
   enabled: "enabled",
   closedTabs: "closedTabs",
-  badgeCount: "badgeCount",
 } as const;
 
 /** chrome.storage.session is cleared when the browser restarts, which gives us the "reset on restart" behaviour for free. */
@@ -46,16 +45,6 @@ export async function loadClosedTabs(): Promise<ClosedTab[]> {
 
 export async function saveClosedTabs(list: ClosedTab[]): Promise<void> {
   await chrome.storage.local.set({ [LOCAL_KEYS.closedTabs]: list });
-}
-
-export async function loadBadgeCount(): Promise<number> {
-  const data = await chrome.storage.local.get(LOCAL_KEYS.badgeCount);
-  const v = data[LOCAL_KEYS.badgeCount];
-  return typeof v === "number" ? v : 0;
-}
-
-export async function saveBadgeCount(count: number): Promise<void> {
-  await chrome.storage.local.set({ [LOCAL_KEYS.badgeCount]: count });
 }
 
 export type AccessTimes = Record<string, number>;
