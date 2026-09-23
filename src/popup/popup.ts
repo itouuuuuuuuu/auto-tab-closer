@@ -54,8 +54,6 @@ async function init(): Promise<void> {
   thresholdEl.textContent = t("popupThreshold", String(settings.thresholdHours));
 
   await Promise.all([renderNextCheck(), refreshClosedTabs()]);
-  // Opening the popup acknowledges the badge.
-  void sendMessage<undefined>({ type: "clearBadge" });
 }
 
 function renderEnabled(enabled: boolean): void {
@@ -158,7 +156,6 @@ checkNowBtn.addEventListener("click", async () => {
     checkResultEl.textContent = t("popupChecked", String(res?.closed ?? 0));
     checkResultEl.hidden = false;
     await refreshClosedTabs();
-    void sendMessage<undefined>({ type: "clearBadge" });
   } finally {
     checkNowBtn.disabled = false;
   }

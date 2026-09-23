@@ -20,6 +20,8 @@ export interface Settings {
   whitelist: string[];
   /** When true, tabs that belong to a tab group are never closed. */
   excludeGrouped: boolean;
+  /** How often tabs are checked, in minutes (integer, 1..60). */
+  checkIntervalMinutes: number;
 }
 
 export interface ClosedTab {
@@ -33,12 +35,15 @@ export const MIN_THRESHOLD_HOURS = 1;
 export const MAX_THRESHOLD_HOURS = 720;
 export const DEFAULT_THRESHOLD_HOURS = 12;
 export const MAX_CLOSED_TABS = 100;
-export const CHECK_INTERVAL_MINUTES = 5;
+export const MIN_CHECK_INTERVAL_MINUTES = 1;
+export const MAX_CHECK_INTERVAL_MINUTES = 60;
+export const DEFAULT_CHECK_INTERVAL_MINUTES = 10;
 
 export const DEFAULT_SETTINGS: Settings = {
   thresholdHours: DEFAULT_THRESHOLD_HOURS,
   whitelist: [],
   excludeGrouped: false,
+  checkIntervalMinutes: DEFAULT_CHECK_INTERVAL_MINUTES,
 };
 
 export const HOUR_MS = 60 * 60 * 1000;

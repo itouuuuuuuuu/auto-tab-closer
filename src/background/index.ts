@@ -1,6 +1,6 @@
 import { appendClosedTabs, removeClosedTab } from "../core/closed-tabs";
 import { selectTabsToClose } from "../core/select-tabs";
-import { CHECK_INTERVAL_MINUTES, type ClosedTab, type TabSnapshot } from "../core/types";
+import type { ClosedTab, TabSnapshot } from "../core/types";
 import type {
   CheckNowResponse,
   ClosedTabsResponse,
@@ -10,13 +10,12 @@ import type {
 import {
   LOCAL_KEYS,
   loadAccessTimes,
-  loadBadgeCount,
   loadClosedTabs,
   loadEnabled,
   loadSessionStartedAt,
   loadSettings,
+  SYNC_KEYS,
   saveAccessTimes,
-  saveBadgeCount,
   saveClosedTabs,
   saveSessionStartedAt,
 } from "../shared/storage";
@@ -46,18 +45,24 @@ async function startSession(): Promise<void> {
   }
   await saveAccessTimes(times);
   await syncAlarm();
-  await refreshBadge();
 }
 
+/** Create, re-create (when the interval changed) or clear the alarm to match settings. */
 async function syncAlarm(): Promise<void> {
-  const enabled = await loadEnabled();
-  const existing = await chrome.alarms.get(ALARM_NAME);
-  if (enabled && !existing) {
+  const [enabled, settings, existing] = await Promise.all([
+    loadEnabled(),
+    loadSettings(),
+    chrome.alarms.get(ALARM_NAME),
+  ]);
+  const interval = settings.checkIntervalMinutes;
+  if (enabled) {
+    if (existing?.periodInMinutes === interval) return;
+    // create() replaces an existing alarm with the same name.
     await chrome.alarms.create(ALARM_NAME, {
-      delayInMinutes: CHECK_INTERVAL_MINUTES,
-      periodInMinutes: CHECK_INTERVAL_MINUTES,
+      delayInMinutes: interval,
+      periodInMinutes: interval,
     });
-  } else if (!enabled && existing) {
+  } else if (existing) {
     await chrome.alarms.clear(ALARM_NAME);
   }
 }
@@ -140,10 +145,6 @@ async function runCheck(): Promise<number> {
   }));
   await updateClosedTabs((list) => appendClosedTabs(list, entries));
 
-  const badge = await loadBadgeCount();
-  await saveBadgeCount(badge + closedTabs.length);
-  await refreshBadge();
-
   return closedTabs.length;
 }
 
@@ -192,18 +193,6 @@ function updateClosedTabs(mutate: (list: ClosedTab[]) => ClosedTab[]): Promise<C
 }
 
 // ---------------------------------------------------------------------------
-// Badge
-// ---------------------------------------------------------------------------
-
-async function refreshBadge(): Promise<void> {
-  const count = await loadBadgeCount();
-  await chrome.action.setBadgeText({ text: count > 0 ? String(count) : "" });
-  if (count > 0) {
-    await chrome.action.setBadgeBackgroundColor({ color: "#4F6DF5" });
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Messaging with popup
 // ---------------------------------------------------------------------------
 
@@ -229,11 +218,6 @@ async function handleMessage(message: Message): Promise<unknown> {
       const res: NextCheckResponse = { scheduledTime: alarm ? alarm.scheduledTime : null };
       return res;
     }
-    case "clearBadge": {
-      await saveBadgeCount(0);
-      await refreshBadge();
-      return undefined;
-    }
     case "restoreClosedTab": {
       await chrome.tabs.create({ url: message.tab.url, active: false });
       const closedTabs = await updateClosedTabs((list) => removeClosedTab(list, message.tab));
@@ -248,9 +232,13 @@ async function handleMessage(message: Message): Promise<unknown> {
   }
 }
 
-// Re-arm / clear the alarm whenever the popup flips the toggle.
+// Re-arm / clear the alarm whenever the popup flips the toggle or the check
+// interval changes in the options page.
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === "local" && LOCAL_KEYS.enabled in changes) {
+  if (
+    (area === "local" && LOCAL_KEYS.enabled in changes) ||
+    (area === "sync" && SYNC_KEYS.settings in changes)
+  ) {
     void syncAlarm();
   }
 });

@@ -4,7 +4,6 @@ import type { ClosedTab } from "../core/types";
 export type Message =
   | { type: "checkNow" }
   | { type: "getNextCheck" }
-  | { type: "clearBadge" }
   /** Open the tab again and drop it from the recently-closed list. */
   | { type: "restoreClosedTab"; tab: ClosedTab }
   | { type: "clearClosedTabs" };

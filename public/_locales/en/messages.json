@@ -24,6 +24,8 @@
   "optionsTitle": { "message": "Auto Tab Closer settings" },
   "optionsThresholdLabel": { "message": "Close tabs not viewed for (hours)" },
   "optionsThresholdHelp": { "message": "Whole hours between 1 and 720 (30 days). Default is 12." },
+  "optionsCheckIntervalLabel": { "message": "Check tabs every (minutes)" },
+  "optionsCheckIntervalHelp": { "message": "Whole minutes between 1 and 60. Default is 10." },
   "optionsWhitelistLabel": { "message": "Never close these sites" },
   "optionsWhitelistHelp": {
     "message": "One hostname per line. \"example.com\" also matches every subdomain such as \"app.example.com\". Lines starting with # are ignored."
